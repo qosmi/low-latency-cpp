@@ -49,6 +49,7 @@ if (PETDAQ_ENABLE_SANITIZERS AND NOT MSVC)
     target_compile_options(pet_daq_demo PRIVATE
         -fsanitize=address,undefined
         -fno-omit-frame-pointer
+        -O3
     )
     target_link_options(pet_daq_demo PRIVATE
         -fsanitize=address,undefined

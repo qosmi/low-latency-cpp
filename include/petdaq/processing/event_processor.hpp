@@ -32,16 +32,27 @@ public:
     void run() {
         DetectorEvent event{};
 
-        while (!producer_done_.load(std::memory_order_acquire) ||
-               queue_.try_pop(event)) {
-            if (process_one(event)) {
-                statistics_.processed.fetch_add(1, std::memory_order_relaxed);
-            } else {
-                // The queue can be empty while the producer is still running.
-                // Yield avoids a tight spin consuming an entire CPU core in
-                // this simple cross-platform demo.
-                std::this_thread::yield();
+        while (true)
+        {
+            if (queue_.try_pop(event))
+            {
+                if (process_one(event))
+                {
+                    statistics_.processed.fetch_add(
+                        1,
+                        std::memory_order_relaxed);
+                }
+                continue;
             }
+
+            if (producer_done_.load(std::memory_order_acquire))
+            {
+                break;
+            }
+
+            // The queue is temporarily empty while the producer is still
+            // running. Yield rather than spinning continuously.
+            std::this_thread::yield();
         }
     }
 
