@@ -70,3 +70,16 @@ add_test(
     NAME pet_daq_spsc_test
     COMMAND pet_daq_spsc_test
 )
+
+add_executable(pet_daq_calibration_test
+    tests/calibration_test.cpp
+)
+
+target_link_libraries(pet_daq_calibration_test
+    PRIVATE petdaq_core
+)
+
+add_test(
+    NAME pet_daq_calibration_test
+    COMMAND pet_daq_calibration_test
+)
