@@ -59,6 +59,7 @@ int main() {
     Queue queue;
     petdaq::PipelineStatistics statistics;
     std::atomic<bool> producer_done{false};
+    const petdaq::CalibrationTable calibration;
 
     petdaq::DetectorSimulator<QueueCapacity> simulator{
         queue,
@@ -70,6 +71,7 @@ int main() {
         queue,
         statistics,
         producer_done,
+        &calibration,
         BatchSize};
 
     const auto start = std::chrono::steady_clock::now();

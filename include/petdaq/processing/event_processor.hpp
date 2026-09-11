@@ -3,6 +3,7 @@
 #include "petdaq/core/detector_event.hpp"
 #include "petdaq/core/statistics.hpp"
 #include "petdaq/daq/spsc_ring_buffer.hpp"
+#include "petdaq/processing/calibration.hpp"
 #include "petdaq/processing/event_batch.hpp"
 #include <atomic>
 #include <chrono>
@@ -36,9 +37,11 @@ namespace petdaq
             Queue &queue,
             PipelineStatistics &statistics,
             const std::atomic<bool> &producer_done,
+            const CalibrationTable *calibration = nullptr,
             std::size_t batch_size = 1U)
             : queue_(queue),
               statistics_(statistics),
+              calibration_(calibration),
               producer_done_(producer_done),
               batch_size_(batch_size == 0U
                               ? 1U
@@ -107,16 +110,19 @@ namespace petdaq
 
         void process_one(const DetectorEvent &event) noexcept
         {
-            // Placeholder for the actual processing stage.
-            //
-            // We deliberately keep the work small here so that later
-            // benchmarks can isolate the effect of batching.
+            const float energy =
+                calibration_ == nullptr
+                    ? static_cast<float>(event.raw_energy)
+                    : calibration_->calibrate(
+                          event.channel,
+                          event.raw_energy);
 
-            sink_ ^= static_cast<std::uint64_t>(event.raw_energy) + event.timestamp_ns + event.detector_id + event.channel;
+            sink_ ^= static_cast<std::uint64_t>(energy) + event.timestamp_ns + event.detector_id + event.channel;
         }
 
         Queue &queue_;
         PipelineStatistics &statistics_;
+        const CalibrationTable *calibration_;
         const std::atomic<bool> &producer_done_;
 
         std::size_t batch_size_;

@@ -18,11 +18,13 @@ int main()
     Queue queue;
     petdaq::PipelineStatistics statistics;
     std::atomic<bool> producer_done{false};
+    petdaq::CalibrationTable calibration;
 
     Processor processor{
         queue,
         statistics,
         producer_done,
+        &calibration,
         32};
 
     std::thread producer([&]
