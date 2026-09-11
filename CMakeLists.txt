@@ -83,3 +83,37 @@ add_test(
     NAME pet_daq_calibration_test
     COMMAND pet_daq_calibration_test
 )
+
+add_executable(pet_daq_event_processor_batch_test
+    tests/event_processor_batch_test.cpp
+)
+
+target_link_libraries(pet_daq_event_processor_batch_test
+    PRIVATE petdaq_core
+)
+
+add_test(
+    NAME pet_daq_event_processor_batch_test
+    COMMAND pet_daq_event_processor_batch_test
+)
+
+add_executable(pet_daq_event_batch_test
+    tests/event_batch_test.cpp
+)
+
+target_link_libraries(pet_daq_event_batch_test
+    PRIVATE petdaq_core
+)
+
+add_test(
+    NAME pet_daq_event_batch_test
+    COMMAND pet_daq_event_batch_test
+)
+
+add_executable(pet_daq_batch_processing
+    benchmarks/batch_processing.cpp
+)
+
+target_link_libraries(pet_daq_batch_processing
+    PRIVATE petdaq_core
+)

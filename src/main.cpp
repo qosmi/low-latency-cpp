@@ -49,6 +49,8 @@ int main() {
         petdaq::DetectorEvent,
         QueueCapacity>;
 
+    constexpr std::size_t BatchSize = 32;
+
     std::cout << "PET-DAQ low-latency acquisition demo\n"
               << "------------------------------------\n"
               << "Events:  " << EventCount << '\n'
@@ -67,8 +69,8 @@ int main() {
     petdaq::EventProcessor<QueueCapacity> processor{
         queue,
         statistics,
-        producer_done
-    };
+        producer_done,
+        BatchSize};
 
     const auto start = std::chrono::steady_clock::now();
 

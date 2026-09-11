@@ -3,92 +3,125 @@
 #include "petdaq/core/detector_event.hpp"
 #include "petdaq/core/statistics.hpp"
 #include "petdaq/daq/spsc_ring_buffer.hpp"
-
+#include "petdaq/processing/event_batch.hpp"
 #include <atomic>
+#include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <thread>
 
-namespace petdaq {
-
-/**
- * Consumes detector events from the acquisition queue.
- *
- * This processor intentionally does very little work in the first version.
- * Later iterations will add calibration, filtering, batching and reconstruction
- * while keeping the acquisition/processing boundary measurable.
- */
-template <std::size_t QueueCapacity>
-class EventProcessor final {
-public:
-    using Queue = SpscRingBuffer<DetectorEvent, QueueCapacity>;
-
-    EventProcessor(Queue& queue,
-                   PipelineStatistics& statistics,
-                   const std::atomic<bool>& producer_done)
-        : queue_(queue),
-          statistics_(statistics),
-          producer_done_(producer_done) {}
+namespace petdaq
+{
     /*
-    try_pop()
-       │
-       ├── success ──► process event
-       │                  │
-       │                  └── loop
-       │
-       └── failure
-            │
-            ├── producer still running ──► yield
-            │                                  │
-            │                                  └── loop
-            │
-            └── producer finished ──► terminate
+    fill batch
+        ├── pop event
+        ├── pop event
+        └── ...
+              │
+              ▼
+    process batch
+        ├── process event
+        ├── process event
+        └── ...
     */
-    void run() {
-        DetectorEvent event{};
+    template <std::size_t QueueCapacity>
+    class EventProcessor final
+    {
+    public:
+        using Queue = SpscRingBuffer<DetectorEvent, QueueCapacity>;
 
-        while (true)
+        static constexpr std::size_t MaxBatchSize = 64;
+
+        EventProcessor(
+            Queue &queue,
+            PipelineStatistics &statistics,
+            const std::atomic<bool> &producer_done,
+            std::size_t batch_size = 1U)
+            : queue_(queue),
+              statistics_(statistics),
+              producer_done_(producer_done),
+              batch_size_(batch_size == 0U
+                              ? 1U
+                          : batch_size > MaxBatchSize
+                              ? MaxBatchSize
+                              : batch_size)
         {
-            if (queue_.try_pop(event))
-            {
-                if (process_one(event))
-                {
-                    statistics_.processed.fetch_add(
-                        1,
-                        std::memory_order_relaxed);
-                }
-                continue;
-            }
-
-            if (producer_done_.load(std::memory_order_acquire))
-            {
-                break;
-            }
-
-            // The queue is temporarily empty while the producer is still
-            // running. Yield rather than spinning continuously.
-            std::this_thread::yield();
         }
-    }
 
-private:
-    [[nodiscard]] bool process_one(const DetectorEvent& event) noexcept {
-        // Placeholder for the hot processing path.
-        //
-        // The volatile sink prevents the compiler from proving that the
-        // simulated work has no observable effect. In later versions this
-        // will become actual calibration/event processing.
-        sink_ ^= static_cast<std::uint64_t>(event.raw_energy)
-                  + event.timestamp_ns
-                  + event.detector_id
-                  + event.channel;
-        return true;
-    }
+        void run()
+        {
+            EventBatch<MaxBatchSize> batch;
 
-    Queue& queue_;
-    PipelineStatistics& statistics_;
-    const std::atomic<bool>& producer_done_;
+            while (true)
+            {
+                batch.clear();
 
-    std::uint64_t sink_{0};
-};
+                fill_batch(batch);
+
+                if (!batch.empty())
+                {
+                    process_batch(batch);
+                    continue;
+                }
+
+                if (producer_done_.load(std::memory_order_acquire))
+                {
+                    break;
+                }
+
+                std::this_thread::yield();
+            }
+        }
+
+    private:
+        void fill_batch(EventBatch<MaxBatchSize> &batch)
+        {
+            // batching policy: Process when either the configured batch size is reached or the queue temporarily has no more events
+            while (batch.size() < batch_size_)
+            {
+                DetectorEvent event{};
+
+                if (!queue_.try_pop(event))
+                {
+                    break;
+                }
+
+                const bool inserted = batch.push(event);
+
+                // batch.size() < batch capacity guarantees this.
+                (void)inserted;
+            }
+        }
+
+        void process_batch(const EventBatch<MaxBatchSize> &batch) noexcept
+        {
+            for (std::size_t i = 0; i < batch.size(); ++i)
+            {
+                process_one(batch[i]);
+            }
+
+            statistics_.processed.fetch_add(
+                batch.size(),
+                std::memory_order_relaxed);
+        }
+
+        void process_one(const DetectorEvent &event) noexcept
+        {
+            // Placeholder for the actual processing stage.
+            //
+            // We deliberately keep the work small here so that later
+            // benchmarks can isolate the effect of batching.
+
+            sink_ ^= static_cast<std::uint64_t>(event.raw_energy) + event.timestamp_ns + event.detector_id + event.channel;
+        }
+
+        Queue &queue_;
+        PipelineStatistics &statistics_;
+        const std::atomic<bool> &producer_done_;
+
+        std::size_t batch_size_;
+
+        std::uint64_t sink_{0};
+    };
 
 } // namespace petdaq
