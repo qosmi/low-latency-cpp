@@ -55,3 +55,18 @@ if (PETDAQ_ENABLE_SANITIZERS AND NOT MSVC)
         -fsanitize=address,undefined
     )
 endif()
+
+enable_testing()
+
+add_executable(pet_daq_spsc_test
+    tests/spsc_ring_buffer_test.cpp
+)
+
+target_link_libraries(pet_daq_spsc_test
+    PRIVATE petdaq_core
+)
+
+add_test(
+    NAME pet_daq_spsc_test
+    COMMAND pet_daq_spsc_test
+)

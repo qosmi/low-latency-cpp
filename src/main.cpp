@@ -4,6 +4,7 @@
 #include "petdaq/processing/event_processor.hpp"
 
 #include <atomic>
+#include <cassert>
 #include <chrono>
 #include <cstdint>
 #include <iomanip>
@@ -20,6 +21,9 @@ void print_statistics(const petdaq::PipelineStatistics& stats,
     const auto enqueued = stats.enqueued.load(std::memory_order_relaxed);
     const auto dropped = stats.dropped.load(std::memory_order_relaxed);
     const auto processed = stats.processed.load(std::memory_order_relaxed);
+
+    assert(generated == enqueued + dropped);
+    assert(processed == enqueued);
 
     const double seconds =
         std::chrono::duration<double>(elapsed).count();
@@ -81,6 +85,15 @@ int main() {
 
     producer.join();
     consumer.join();
+
+        assert(
+        statistics.generated.load(std::memory_order_relaxed) ==
+        statistics.enqueued.load(std::memory_order_relaxed) +
+            statistics.dropped.load(std::memory_order_relaxed));
+
+    assert(
+        statistics.processed.load(std::memory_order_relaxed) ==
+        statistics.enqueued.load(std::memory_order_relaxed));
 
     const auto elapsed = std::chrono::steady_clock::now() - start;
 

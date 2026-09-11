@@ -28,7 +28,21 @@ public:
         : queue_(queue),
           statistics_(statistics),
           producer_done_(producer_done) {}
-
+    /*
+    try_pop()
+       │
+       ├── success ──► process event
+       │                  │
+       │                  └── loop
+       │
+       └── failure
+            │
+            ├── producer still running ──► yield
+            │                                  │
+            │                                  └── loop
+            │
+            └── producer finished ──► terminate
+    */
     void run() {
         DetectorEvent event{};
 
