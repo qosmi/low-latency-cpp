@@ -18,12 +18,14 @@ double run_benchmark(std::uint64_t event_count)
     Queue queue;
     petdaq::PipelineStatistics statistics;
     std::atomic<bool> producer_done{false};
+    petdaq::LatencyRecorder latency_recorder;
     const petdaq::CalibrationTable calibration;
 
     Processor processor{
         queue,
         statistics,
         producer_done,
+        &latency_recorder,
         &calibration,
         BatchSize};
 

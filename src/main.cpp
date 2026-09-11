@@ -59,6 +59,7 @@ int main() {
     Queue queue;
     petdaq::PipelineStatistics statistics;
     std::atomic<bool> producer_done{false};
+    petdaq::LatencyRecorder latency_recorder;
     const petdaq::CalibrationTable calibration;
 
     petdaq::DetectorSimulator<QueueCapacity> simulator{
@@ -71,6 +72,7 @@ int main() {
         queue,
         statistics,
         producer_done,
+        &latency_recorder,
         &calibration,
         BatchSize};
 
@@ -90,7 +92,7 @@ int main() {
     producer.join();
     consumer.join();
 
-        assert(
+    assert(
         statistics.generated.load(std::memory_order_relaxed) ==
         statistics.enqueued.load(std::memory_order_relaxed) +
             statistics.dropped.load(std::memory_order_relaxed));
@@ -102,6 +104,19 @@ int main() {
     const auto elapsed = std::chrono::steady_clock::now() - start;
 
     print_statistics(statistics, elapsed);
+    std::cout
+        << "Latency samples: "
+        << latency_recorder.sample_count()
+        << '\n'
+        << "Latency min:     "
+        << latency_recorder.minimum_ns()
+        << " ns\n"
+        << "Latency average: "
+        << latency_recorder.average_ns()
+        << " ns\n"
+        << "Latency max:     "
+        << latency_recorder.maximum_ns()
+        << " ns\n";
 
     return 0;
 }

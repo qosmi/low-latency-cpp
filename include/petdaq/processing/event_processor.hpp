@@ -1,6 +1,7 @@
 #pragma once
 
 #include "petdaq/core/detector_event.hpp"
+#include "petdaq/core/latency.hpp"
 #include "petdaq/core/statistics.hpp"
 #include "petdaq/daq/spsc_ring_buffer.hpp"
 #include "petdaq/processing/calibration.hpp"
@@ -37,12 +38,14 @@ namespace petdaq
             Queue &queue,
             PipelineStatistics &statistics,
             const std::atomic<bool> &producer_done,
+            LatencyRecorder *latency_recorder = nullptr,
             const CalibrationTable *calibration = nullptr,
             std::size_t batch_size = 1U)
             : queue_(queue),
               statistics_(statistics),
-              calibration_(calibration),
               producer_done_(producer_done),
+              latency_recorder_(latency_recorder),
+              calibration_(calibration),
               batch_size_(batch_size == 0U
                               ? 1U
                           : batch_size > MaxBatchSize
@@ -100,6 +103,7 @@ namespace petdaq
         {
             for (std::size_t i = 0; i < batch.size(); ++i)
             {
+                measure_latency(batch[i]);
                 process_one(batch[i]);
             }
 
@@ -120,13 +124,35 @@ namespace petdaq
             sink_ ^= static_cast<std::uint64_t>(energy) + event.timestamp_ns + event.detector_id + event.channel;
         }
 
+        void measure_latency(const DetectorEvent &event) noexcept
+        {
+            if (latency_recorder_ == nullptr)
+            {
+                return;
+            }
+
+            const auto now = std::chrono::steady_clock::now();
+            const auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+            if (now_ns <= 0)
+            {
+                return;
+            }
+
+            const auto now_ns_u64 = static_cast<std::uint64_t>(now_ns);
+            if (now_ns_u64 < event.timestamp_ns)
+            {
+                return;
+            }
+
+            latency_recorder_->record(now_ns_u64 - event.timestamp_ns);
+        }
+
         Queue &queue_;
         PipelineStatistics &statistics_;
-        const CalibrationTable *calibration_;
         const std::atomic<bool> &producer_done_;
-
+        LatencyRecorder *latency_recorder_;
+        const CalibrationTable *calibration_;
         std::size_t batch_size_;
-
         std::uint64_t sink_{0};
     };
 

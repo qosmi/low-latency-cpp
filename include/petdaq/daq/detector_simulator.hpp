@@ -35,9 +35,17 @@ public:
         std::uniform_int_distribution<std::uint16_t> channel_dist{0, 63};
         std::uniform_int_distribution<std::uint32_t> energy_dist{0, 4095};
 
-        for (std::uint64_t i = 0; i < event_count_; ++i) {
+        for (std::uint64_t i = 0; i < event_count_; ++i)
+        {
+            const auto now = std::chrono::steady_clock::now();
+
+            const auto timestamp_ns =
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    now.time_since_epoch())
+                    .count();
+
             DetectorEvent event{
-                .timestamp_ns = i * 50, // Simulated 20 MHz event clock.
+                .timestamp_ns = static_cast<std::uint64_t>(timestamp_ns),
                 .detector_id = detector_dist(rng),
                 .channel = channel_dist(rng),
                 .raw_energy = energy_dist(rng)
