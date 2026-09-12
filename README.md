@@ -315,4 +315,4 @@ relevant to high-throughput scientific and medical-device data processing.
 
 ## License
 
-Add the project's chosen license here.
+This project is intended as an educational and portfolio piece and is licensed under the MIT License, meaning you're free to use, modify, and distribute the code — see the [LICENSE](LICENSE) file for the full text.

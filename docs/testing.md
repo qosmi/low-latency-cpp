@@ -1,61 +1,79 @@
-# Testing Strategy
+# Testing
 
-Planned test layers:
+## Unit Tests
 
-## Unit tests
+Unit tests cover:
 
-- ring-buffer empty behavior
-- ring-buffer full behavior
+- event representation assumptions
+- SPSC queue behavior
+- calibration
+- batching
+- latency statistics
+- latency percentiles
+- pipeline accounting
+- reconstruction
+- CSV output
+
+## Queue Tests
+
+The SPSC queue tests verify:
+
+- empty queue behavior
+- single-event push/pop
+- field preservation
 - FIFO ordering
-- wrap-around
-- detector-event invariants
-- calibration functions
+- full queue behavior
+- bulk dequeue
+- partial bulk dequeue
 
-## Integration tests
+## Concurrency Tests
 
-- producer → queue → consumer
-- no duplication
-- expected drop behavior under overload
-- graceful shutdown
+Producer and consumer threads exchange a large number of sequence-numbered
+events.
 
-## Performance tests
+The consumer validates that sequence numbers are received in order.
 
-- throughput
-- latency distribution
-- queue occupancy
-- regression thresholds
+The stress test is repeated to increase the likelihood of exposing timing-
+dependent concurrency defects.
 
-## Tooling
+## Sanitizers
 
-The project will add:
+The project supports sanitizer-enabled builds.
 
-- AddressSanitizer
-- UndefinedBehaviorSanitizer
-- GoogleTest
-- Google Benchmark
-- Linux `perf`
+Example:
 
-## Concurrency validation
+    cmake -S . -B build-asan \
+        -DPETDAQ_ENABLE_SANITIZERS=ON \
+        -DCMAKE_BUILD_TYPE=Debug
 
-The SPSC queue is validated at three levels:
+    cmake --build build-asan
 
-1. Functional correctness
-   - empty queue behavior
-   - FIFO ordering
-   - event field preservation
-   - full queue behavior
+    ctest --test-dir build-asan --output-on-failure
 
-2. Concurrent stress testing
-   - one producer
-   - one consumer
-   - 1,000,000 events per run
-   - repeated across multiple runs
-   - sequence numbers verify FIFO ordering
+## Integration Testing
 
-3. Sanitizer validation
-   - AddressSanitizer
-   - UndefinedBehaviorSanitizer
+The reconstruction demonstration exercises:
 
-The sanitizer build uses the same test suite as the normal build.
+    DetectorEvent
+        →
+    EventBatch
+        →
+    CalibrationTable
+        →
+    Reconstructor
+        →
+    CSV writer
 
-Correctness tests must remain separate from performance tests.
+The Python tool then consumes the generated reconstruction.
+
+## Performance Testing
+
+Performance tests are separate from correctness tests.
+
+They measure:
+
+- batch-processing throughput
+- reconstruction throughput
+- latency statistics
+
+Performance results are machine-dependent.
