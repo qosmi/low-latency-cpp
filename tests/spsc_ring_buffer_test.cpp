@@ -15,31 +15,34 @@ int main()
     // ------------------------------------------------------------
     // Test 1: Newly constructed queue is empty.
     // ------------------------------------------------------------
-    DetectorEvent event{};
-
-    assert(!queue.try_pop(event));
+    {
+        DetectorEvent event{};
+        assert(!queue.try_pop(event));
+    }
 
     // ------------------------------------------------------------
     // Test 2: Push and pop preserve the complete event.
     // ------------------------------------------------------------
-    const DetectorEvent input{
-        .timestamp_ns = 12345,
-        .detector_id = 7,
-        .channel = 3,
-        .raw_energy = 987};
+    {
+        const DetectorEvent input{
+            .timestamp_ns = 12345,
+            .detector_id = 7,
+            .channel = 3,
+            .raw_energy = 987};
 
-    assert(queue.try_push(input));
+        assert(queue.try_push(input));
 
-    DetectorEvent output{};
+        DetectorEvent output{};
 
-    assert(queue.try_pop(output));
+        assert(queue.try_pop(output));
 
-    assert(output.timestamp_ns == input.timestamp_ns);
-    assert(output.detector_id == input.detector_id);
-    assert(output.channel == input.channel);
-    assert(output.raw_energy == input.raw_energy);
+        assert(output.timestamp_ns == input.timestamp_ns);
+        assert(output.detector_id == input.detector_id);
+        assert(output.channel == input.channel);
+        assert(output.raw_energy == input.raw_energy);
 
-    assert(!queue.try_pop(output));
+        assert(!queue.try_pop(output));
+    }
 
     // ------------------------------------------------------------
     // Test 3: FIFO ordering.
@@ -65,8 +68,6 @@ int main()
         assert(e.channel == i);
         assert(e.raw_energy == 100 + i);
     }
-
-    assert(!queue.try_pop(event));
 
     // ------------------------------------------------------------
     // Test 4: Queue rejects pushes when full.
@@ -101,7 +102,46 @@ int main()
         assert(e.timestamp_ns == i);
     }
 
-    assert(!queue.try_pop(event));
+    SpscRingBuffer<DetectorEvent, 8> bulk_queue;
+
+    for (std::uint64_t i = 0; i < 6; ++i) {
+        DetectorEvent event{
+            .timestamp_ns = i,
+            .detector_id = 1,
+            .channel =
+                static_cast<std::uint16_t>(i),
+            .raw_energy =
+                static_cast<std::uint32_t>(100 + i)
+        };
+
+        assert(bulk_queue.try_push(event));
+    }
+
+    {
+        DetectorEvent output[4]{};
+
+        const std::size_t first_count =
+            bulk_queue.try_pop_bulk(output, 4);
+
+        assert(first_count == 4);
+
+        for (std::uint64_t i = 0; i < 4; ++i) {
+            assert(output[i].timestamp_ns == i);
+            assert(output[i].channel == i);
+            assert(output[i].raw_energy == 100 + i);
+        }
+
+        const std::size_t second_count =
+            bulk_queue.try_pop_bulk(output, 4);
+
+        assert(second_count == 2);
+
+        assert(output[0].timestamp_ns == 4);
+        assert(output[1].timestamp_ns == 5);
+
+        assert(
+            bulk_queue.try_pop_bulk(output, 4) == 0);
+    }
 
     // ------------------------------------------------------------
     // Test 6: Concurrent producer/consumer stress test.

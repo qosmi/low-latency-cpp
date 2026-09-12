@@ -118,6 +118,13 @@ target_link_libraries(pet_daq_batch_processing
     PRIVATE petdaq_core
 )
 
+if (UNIX AND NOT APPLE)
+    target_link_libraries(
+        pet_daq_batch_processing
+        PRIVATE pthread
+    )
+endif()
+
 add_executable(pet_daq_latency_percentile_test
     tests/latency_percentile_test.cpp
 )

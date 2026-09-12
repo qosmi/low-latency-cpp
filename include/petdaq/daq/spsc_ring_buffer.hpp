@@ -77,6 +77,39 @@ public:
         return true;
     }
 
+    std::size_t try_pop_bulk(
+        T* output,
+        std::size_t max_count) noexcept
+    {
+        if (max_count == 0) {
+            return 0;
+        }
+
+        const auto read =
+            read_index_.load(std::memory_order_relaxed);
+
+        const auto write =
+            write_index_.load(std::memory_order_acquire);
+
+        const auto available = write - read;
+
+        const auto count =
+            available < max_count
+                ? static_cast<std::size_t>(available)
+                : max_count;
+
+        for (std::size_t i = 0; i < count; ++i) {
+            output[i] =
+                storage_[(read + i) & mask_];
+        }
+
+        read_index_.store(
+            read + count,
+            std::memory_order_release);
+
+        return count;
+    }
+
 private:
     static constexpr std::size_t mask_ = Capacity - 1;
 

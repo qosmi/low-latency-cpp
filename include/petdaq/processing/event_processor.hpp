@@ -62,10 +62,13 @@ namespace petdaq
             {
                 batch.clear();
 
-                fill_batch(batch);
+                const std::size_t count =
+                    queue_.try_pop_bulk(
+                        batch.data(),
+                        batch.capacity());
 
-                if (!batch.empty())
-                {
+                if (count > 0) {
+                    batch.set_size_from_bulk_pop(count);
                     process_batch(batch);
                     continue;
                 }

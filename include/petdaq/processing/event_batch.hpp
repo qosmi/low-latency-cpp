@@ -42,6 +42,23 @@ namespace petdaq
             return size_ == 0;
         }
 
+        [[nodiscard]] DetectorEvent* data() noexcept
+        {
+            return events_.data();
+        }
+
+        [[nodiscard]] constexpr std::size_t capacity() const noexcept
+        {
+            return Capacity;
+        }
+
+        void set_size_from_bulk_pop(std::size_t size) noexcept
+        {
+            size_ = size <= Capacity
+                ? size
+                : Capacity;
+        }
+
         [[nodiscard]]
         const DetectorEvent &operator[](std::size_t index) const noexcept
         {
