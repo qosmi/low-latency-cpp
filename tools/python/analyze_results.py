@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -53,16 +53,39 @@ def save_visualization(
     plt.close()
 
 
+def parse_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Analyze a PET-DAQ reconstruction."
+    )
+
+    parser.add_argument(
+        "input",
+        nargs="?",
+        default="reconstruction.csv",
+        help="Input reconstruction CSV."
+    )
+
+    parser.add_argument(
+        "--output",
+        default="reconstruction.png",
+        help="Output visualization PNG."
+    )
+
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = parse_arguments()
+
     image = load_reconstruction(
-        str(INPUT_FILE)
+        args.input
     )
 
     print_statistics(image)
 
     save_visualization(
         image,
-        str(OUTPUT_FILE)
+        args.output
     )
 
     print(
