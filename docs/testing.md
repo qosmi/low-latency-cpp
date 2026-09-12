@@ -35,4 +35,27 @@ The project will add:
 - Google Benchmark
 - Linux `perf`
 
+## Concurrency validation
+
+The SPSC queue is validated at three levels:
+
+1. Functional correctness
+   - empty queue behavior
+   - FIFO ordering
+   - event field preservation
+   - full queue behavior
+
+2. Concurrent stress testing
+   - one producer
+   - one consumer
+   - 1,000,000 events per run
+   - repeated across multiple runs
+   - sequence numbers verify FIFO ordering
+
+3. Sanitizer validation
+   - AddressSanitizer
+   - UndefinedBehaviorSanitizer
+
+The sanitizer build uses the same test suite as the normal build.
+
 Correctness tests must remain separate from performance tests.

@@ -145,3 +145,30 @@ add_test(
     NAME pet_daq_pipeline_invariants_test
     COMMAND pet_daq_pipeline_invariants_test
 )
+
+add_executable(pet_daq_spsc_stress_test
+    tests/spsc_stress_test.cpp
+)
+
+target_link_libraries(
+    pet_daq_spsc_stress_test
+    PRIVATE petdaq_core
+)
+
+add_test(
+    NAME pet_daq_spsc_stress_test
+    COMMAND pet_daq_spsc_stress_test
+)
+
+add_custom_target(pet_daq_test_all
+    COMMAND ${CMAKE_CTEST_COMMAND}
+        --test-dir ${CMAKE_BINARY_DIR}
+        --output-on-failure
+    DEPENDS
+        pet_daq_demo
+        pet_daq_spsc_test
+        pet_daq_spsc_stress_test
+        pet_daq_calibration_test
+        pet_daq_latency_percentile_test
+        pet_daq_pipeline_invariants_test
+)
