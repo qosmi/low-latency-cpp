@@ -193,3 +193,26 @@ add_test(
     NAME pet_daq_reconstruction_test
     COMMAND pet_daq_reconstruction_test
 )
+
+add_executable(pet_daq_image_writer_test
+    tests/image_writer_test.cpp
+)
+
+target_link_libraries(
+    pet_daq_image_writer_test
+    PRIVATE petdaq_core
+)
+
+add_test(
+    NAME pet_daq_image_writer_test
+    COMMAND pet_daq_image_writer_test
+)
+
+add_executable(pet_daq_reconstruction_demo
+    examples/reconstruction_demo.cpp
+)
+
+target_link_libraries(
+    pet_daq_reconstruction_demo
+    PRIVATE petdaq_core
+)

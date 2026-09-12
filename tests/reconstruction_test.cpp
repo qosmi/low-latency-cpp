@@ -67,5 +67,47 @@ int main()
     assert(reconstructor.process(second));
     assert(reconstructor.projected_events() == 2);
     assert(reconstructor.image().at(3, 7) == 150.0F);
+
+    petdaq::CalibrationTable calibration;
+    calibration.set(
+        3,
+        petdaq::CalibrationConstants{
+            .pedestal = 100.0F,
+            .gain = 2.0F
+        });
+
+    petdaq::EventBatch<4> batch;
+
+    const petdaq::DetectorEvent event_a{
+        .timestamp_ns = 100,
+        .detector_id = 7,
+        .channel = 3,
+        .raw_energy = 150
+    };
+
+    const petdaq::DetectorEvent event_b{
+        .timestamp_ns = 101,
+        .detector_id = 7,
+        .channel = 3,
+        .raw_energy = 200
+    };
+
+    assert(batch.push(event_a));
+    assert(batch.push(event_b));
+
+    petdaq::Reconstructor<64, 64, 4> batch_reconstructor;
+    batch_reconstructor.reset();
+
+    batch_reconstructor.process_batch(
+        batch,
+        calibration);
+
+    assert(
+        batch_reconstructor.projected_events() == 2);
+
+    assert(
+        batch_reconstructor.image().at(3, 7)
+        == 300.0F);
+
     return 0;
 }
