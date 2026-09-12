@@ -1,8 +1,8 @@
+#include "petdaq/core/pipeline_invariants.hpp"
 #include "petdaq/core/statistics.hpp"
 #include "petdaq/daq/detector_simulator.hpp"
 #include "petdaq/daq/spsc_ring_buffer.hpp"
 #include "petdaq/processing/event_processor.hpp"
-
 #include <atomic>
 #include <cassert>
 #include <chrono>
@@ -92,14 +92,7 @@ int main() {
     producer.join();
     consumer.join();
 
-    assert(
-        statistics.generated.load(std::memory_order_relaxed) ==
-        statistics.enqueued.load(std::memory_order_relaxed) +
-            statistics.dropped.load(std::memory_order_relaxed));
-
-    assert(
-        statistics.processed.load(std::memory_order_relaxed) ==
-        statistics.enqueued.load(std::memory_order_relaxed));
+    assert(petdaq::pipeline_accounting_is_consistent(statistics));
 
     const auto elapsed = std::chrono::steady_clock::now() - start;
 

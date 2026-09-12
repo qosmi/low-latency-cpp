@@ -131,3 +131,17 @@ add_test(
     NAME pet_daq_latency_percentile_test
     COMMAND pet_daq_latency_percentile_test
 )
+
+add_executable(pet_daq_pipeline_invariants_test
+    tests/pipeline_invariants_test.cpp
+)
+
+target_link_libraries(
+    pet_daq_pipeline_invariants_test
+    PRIVATE petdaq_core
+)
+
+add_test(
+    NAME pet_daq_pipeline_invariants_test
+    COMMAND pet_daq_pipeline_invariants_test
+)
