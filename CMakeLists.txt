@@ -216,3 +216,12 @@ target_link_libraries(
     pet_daq_reconstruction_demo
     PRIVATE petdaq_core
 )
+
+add_executable(pet_daq_reconstruction_processing
+    benchmarks/reconstruction_processing.cpp
+)
+
+target_link_libraries(
+    pet_daq_reconstruction_processing
+    PRIVATE petdaq_core
+)
