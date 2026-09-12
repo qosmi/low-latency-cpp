@@ -1,8 +1,8 @@
 #pragma once
 
 #include "petdaq/reconstruction/image.hpp"
-
 #include <cstddef>
+#include <iomanip>
 #include <fstream>
 #include <string>
 
@@ -14,6 +14,12 @@ bool write_image_csv(
     const std::string& filename)
 {
     std::ofstream output(filename);
+
+    if (!output) {
+        return false;
+    }
+
+    output << std::setprecision(9);
 
     if (!output) {
         return false;
