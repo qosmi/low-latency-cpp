@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -69,6 +70,38 @@ namespace petdaq
             std::size_t index) const noexcept
         {
             return samples_[index];
+        }
+
+        [[nodiscard]] std::uint64_t percentile(double percentile) const noexcept
+        {
+            if (sample_count_ == 0)
+            {
+                return 0;
+            }
+
+            if (percentile <= 0.0)
+            {
+                return minimum_ns();
+            }
+
+            if (percentile >= 100.0)
+            {
+                return maximum_ns();
+            }
+
+            std::array<std::uint64_t, Capacity> sorted = samples_;
+
+            std::sort(
+                sorted.begin(),
+                sorted.begin() + sample_count_);
+
+            const double rank =
+                (percentile / 100.0) * static_cast<double>(sample_count_ - 1);
+
+            const auto index =
+                static_cast<std::size_t>(rank);
+
+            return sorted[index];
         }
 
     private:

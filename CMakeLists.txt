@@ -117,3 +117,17 @@ add_executable(pet_daq_batch_processing
 target_link_libraries(pet_daq_batch_processing
     PRIVATE petdaq_core
 )
+
+add_executable(pet_daq_latency_percentile_test
+    tests/latency_percentile_test.cpp
+)
+
+target_link_libraries(
+    pet_daq_latency_percentile_test
+    PRIVATE petdaq_core
+)
+
+add_test(
+    NAME pet_daq_latency_percentile_test
+    COMMAND pet_daq_latency_percentile_test
+)

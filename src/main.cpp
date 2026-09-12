@@ -118,5 +118,15 @@ int main() {
         << latency_recorder.maximum_ns()
         << " ns\n";
 
+    std::cout
+        << "Latency p50:      "
+        << latency_recorder.percentile(50.0)
+        << " ns\n"
+        << "Latency p95:      "
+        << latency_recorder.percentile(95.0)
+        << " ns\n"
+        << "Latency p99:      "
+        << latency_recorder.percentile(99.0)
+        << " ns\n";
     return 0;
 }
