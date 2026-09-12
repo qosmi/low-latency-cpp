@@ -4,6 +4,7 @@
 #include "petdaq/processing/event_batch.hpp"
 #include "petdaq/reconstruction/image.hpp"
 #include "petdaq/reconstruction/projector.hpp"
+#include "petdaq/reconstruction/reconstruction_statistics.hpp"
 #include <cstddef>
 
 /*
@@ -23,18 +24,20 @@ public:
     void reset() noexcept
     {
         image_.clear();
-        projected_events_ = 0;
+        statistics_ = {};
     }
 
     bool process(
         const CalibratedEvent& event) noexcept
     {
+        ++statistics_.received_events;
+
         if (!projector_.project(event, image_)) {
+            ++statistics_.rejected_events;
             return false;
         }
 
-        ++projected_events_;
-
+        ++statistics_.projected_events;
         return true;
     }
 
@@ -47,7 +50,19 @@ public:
     [[nodiscard]]
     std::size_t projected_events() const noexcept
     {
-        return projected_events_;
+        return statistics_.projected_events;
+    }
+
+    [[nodiscard]]
+    std::size_t received_events() const noexcept
+    {
+        return statistics_.received_events;
+    }
+
+    [[nodiscard]]
+    std::size_t rejected_events() const noexcept
+    {
+        return statistics_.rejected_events;
     }
 
     void process_batch(
@@ -74,7 +89,7 @@ public:
 private:
     Image image_;
     EventProjector<Width, Height> projector_;
-    std::size_t projected_events_{0};
+    ReconstructionStatistics statistics_{};
 };
 
 } // namespace petdaq

@@ -109,5 +109,30 @@ int main()
         batch_reconstructor.image().at(3, 7)
         == 300.0F);
 
+    petdaq::Reconstructor<4, 4, 4> statistics_reconstructor;
+
+    statistics_reconstructor.reset();
+
+    const petdaq::CalibratedEvent valid{
+        .timestamp_ns = 1,
+        .detector_id = 2,
+        .channel = 1,
+        .energy = 10.0F
+    };
+
+    const petdaq::CalibratedEvent invalid{
+        .timestamp_ns = 2,
+        .detector_id = 7,
+        .channel = 1,
+        .energy = 10.0F
+    };
+
+    assert(statistics_reconstructor.process(valid));
+    assert(!statistics_reconstructor.process(invalid));
+
+    assert(statistics_reconstructor.received_events() == 2);
+    assert(statistics_reconstructor.projected_events() == 1);
+    assert(statistics_reconstructor.rejected_events() == 1);
+
     return 0;
 }
