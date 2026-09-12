@@ -1,41 +1,66 @@
 # Performance
 
-This document will contain measured results rather than theoretical claims.
+## Objectives
 
-## Current benchmark
+The performance work focuses on:
 
-The first implementation reports:
+- event throughput
+- queue overhead
+- batch-processing overhead
+- reconstruction throughput
+- processing latency
 
-- generated events
-- enqueued events
-- processed events
-- dropped events
-- wall-clock throughput
+## Measurement
 
-These numbers are machine-dependent.
+The benchmarks use `std::chrono::steady_clock`.
 
-## Planned measurements
+Throughput is calculated as:
 
-The next iteration will measure:
+    processed_events / elapsed_seconds
 
-- per-event latency
+The measurements are intended for relative comparison between configurations
+on the same machine.
+
+## Batch Processing
+
+The batch benchmark compares multiple batch sizes.
+
+The objective is to determine whether processing events in groups reduces
+per-event queue and processing overhead.
+
+Results are hardware- and build-dependent.
+
+## Reconstruction
+
+The reconstruction benchmark measures the throughput of the C++ image
+processing path independently from the acquisition simulation.
+
+## Latency
+
+Latency is recorded using the same monotonic clock for the simulated event
+timestamp and processing-stage measurement.
+
+Reported statistics include:
+
+- minimum
+- average
+- maximum
 - p50
 - p95
 - p99
-- p99.9
-- maximum observed latency
-- queue occupancy
-- CPU utilization
-- context switches
-- cache misses
-- branch misses
 
-## Optimization policy
+The current measurement does not represent complete hardware-to-image
+latency.
 
-Every optimization should answer three questions:
+## Interpretation
 
-1. What was measured?
-2. What changed?
-3. What improved, and at what cost?
+Benchmark numbers should be compared under the same:
 
-No optimization result should be reported without a reproducible benchmark.
+- CPU
+- compiler
+- optimization level
+- operating-system conditions
+- event workload
+- batch size
+
+No universal throughput claim should be inferred from these measurements.
