@@ -2,18 +2,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
-
 #include "petdaq/core/detector_event.hpp"
 #include "petdaq/processing/calibration.hpp"
 #include "petdaq/processing/event_batch.hpp"
 #include "petdaq/reconstruction/image_writer.hpp"
+#include "petdaq/reconstruction/reconstruction_config.hpp"
 #include "petdaq/reconstruction/reconstructor.hpp"
 
 namespace {
-
-constexpr std::size_t Width = 64;
-constexpr std::size_t Height = 64;
-constexpr std::size_t BatchCapacity = 64;
 
 constexpr std::uint32_t RawEnergy = 100;
 
@@ -90,21 +86,23 @@ int main()
 {
     petdaq::CalibrationTable calibration;
 
+    using Config = petdaq::ReconstructionConfig;
+
     petdaq::Reconstructor<
-        Width,
-        Height,
-        BatchCapacity> reconstructor;
+        Config::width,
+        Config::height,
+        Config::batch_capacity> reconstructor;
 
     reconstructor.reset();
 
-    petdaq::EventBatch<BatchCapacity> batch;
+    petdaq::EventBatch<Config::batch_capacity> batch;
 
     std::uint64_t timestamp = 0;
 
     std::size_t generated_events = 0;
 
-    for (std::size_t y = 0; y < Height; ++y) {
-        for (std::size_t x = 0; x < Width; ++x) {
+    for (std::size_t y = 0; y < Config::height; ++y) {
+        for (std::size_t x = 0; x < Config::width; ++x) {
             const double intensity =
                 phantom_intensity(x, y);
 
@@ -175,9 +173,9 @@ int main()
         << reconstructor.projected_events()
         << '\n'
         << "Image size: "
-        << Width
+        << Config::width
         << " x "
-        << Height
+        << Config::height
         << '\n'
         << "Wrote reconstruction.csv\n";
 
